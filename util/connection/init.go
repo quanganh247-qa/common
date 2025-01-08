@@ -19,25 +19,26 @@ type Connection struct {
 	Close func()
 }
 
-func Init(config util.Config) (*Connection, error) {
+func Init(config util.Config) (*Connection, db.Store, error) {
 	// Initialize JWT token maker
 	_, err := token.NewJWTMaker(config.SymmetricKey)
 	if err != nil {
-		return nil, fmt.Errorf("can't create token maker: %w", err)
+		return nil, nil, fmt.Errorf("can't create token maker: %w", err)
 	}
 
 	// Initialize database connection pool
 	connPool, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to db: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to db: %w", err)
 	}
+	store := db.NewStore(connPool)
 
 	_ = asynq.RedisClientOpt{
 		Addr: config.RedisAddress,
 	}
 	err = redis.InitRedis(config.RedisAddress)
 	if err != nil {
-		return nil, fmt.Errorf("cannot connect to redis: %w", err)
+		return nil, nil, fmt.Errorf("cannot connect to redis: %w", err)
 	}
 
 	DB := db.InitStore(connPool)
@@ -49,7 +50,7 @@ func Init(config util.Config) (*Connection, error) {
 			connPool.Close()
 		},
 	}
-	return conn, nil
+	return conn, store, nil
 }
 
 func runTaskProcessor(config *util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {
