@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	db "github.com/quanganh247-qa/common/db/sqlc"
 	"github.com/quanganh247-qa/common/service/mail"
+	"github.com/quanganh247-qa/common/service/nats"
 	"github.com/quanganh247-qa/common/service/redis"
 	"github.com/quanganh247-qa/common/service/token"
 	"github.com/quanganh247-qa/common/service/worker"
@@ -16,20 +17,22 @@ import (
 )
 
 type Connection struct {
-	Close func()
+	Close      func()
+	NatsClient *nats.Client
+	Store      db.Store
 }
 
-func Init(config util.Config) (*Connection, db.Store, error) {
+func Init(config util.Config) (*Connection, error) {
 	// Initialize JWT token maker
 	_, err := token.NewJWTMaker(config.SymmetricKey)
 	if err != nil {
-		return nil, nil, fmt.Errorf("can't create token maker: %w", err)
+		return nil, fmt.Errorf("can't create token maker: %w", err)
 	}
 
 	// Initialize database connection pool
 	connPool, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to db: %w", err)
+		return nil, fmt.Errorf("cannot connect to db: %w", err)
 	}
 	store := db.NewStore(connPool)
 
@@ -38,21 +41,27 @@ func Init(config util.Config) (*Connection, db.Store, error) {
 	}
 	err = redis.InitRedis(config.RedisAddress)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot connect to redis: %w", err)
+		return nil, fmt.Errorf("cannot connect to redis: %w", err)
 	}
 
 	DB := db.InitStore(connPool)
 	go runTaskProcessor(&config, asynq.RedisClientOpt{Addr: config.RedisAddress}, DB)
 
 	// nats
+	nc, err := nats.NewNATsClient(config.NATs)
+	if err != nil {
+		return nil, fmt.Errorf("cannot connect to nats: %w", err)
+	}
 
 	conn := &Connection{
+		NatsClient: nc,
+		Store:      store,
 		Close: func() {
-			// Close resources when `Close` is called
 			connPool.Close()
+			nc.Close()
 		},
 	}
-	return conn, store, nil
+	return conn, nil
 }
 
 func runTaskProcessor(config *util.Config, redisOpt asynq.RedisClientOpt, store db.Store) {

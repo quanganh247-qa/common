@@ -17,8 +17,7 @@ type Config struct {
 	RabbitMQAddress   string `mapstructure:"RABBITMQ_ADDRESS"`
 	HTTPServerAddress string `mapstructure:"HTTP_SERVER_ADDRESS"`
 
-	SymmetricKey  string `mapstructure:"SYMMETRIC_KEY"`
-	AdminUsername string `mapstructure:"ADMIN_USERNAME"`
+	SymmetricKey string `mapstructure:"SYMMETRIC_KEY"`
 
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
@@ -47,6 +46,8 @@ type Config struct {
 	VietQRBaseURL   string `mapstructure:"VIETQR_BASE_URL"`
 	VietQRAPIKey    string `mapstructure:"VIETQR_API_KEY"`
 	VietQRClientKey string `mapstructure:"VIETQR_CLIENT_KEY"`
+
+	NATs string `mapstructure:"NATS_URL"`
 }
 
 var Configs = Config{}

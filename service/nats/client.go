@@ -12,3 +12,7 @@ func (nc *Client) Subscribe(subject string, handler func(msg []byte)) error {
 	})
 	return err
 }
+
+func (nc *Client) Close() {
+	nc.connection.Close()
+}
