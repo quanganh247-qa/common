@@ -44,6 +44,8 @@ func Init(config util.Config) (*Connection, db.Store, error) {
 	DB := db.InitStore(connPool)
 	go runTaskProcessor(&config, asynq.RedisClientOpt{Addr: config.RedisAddress}, DB)
 
+	// nats
+
 	conn := &Connection{
 		Close: func() {
 			// Close resources when `Close` is called
