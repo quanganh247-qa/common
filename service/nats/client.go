@@ -16,3 +16,10 @@ func (nc *Client) Subscribe(subject string, handler func(msg []byte)) error {
 func (nc *Client) Close() {
 	nc.connection.Close()
 }
+
+func (nc *Client) CheckConnection() string {
+	if nc.connection.IsConnected() {
+		return "connected"
+	}
+	return "disconnected"
+}
