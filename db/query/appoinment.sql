@@ -5,9 +5,10 @@ INSERT INTO Appointment (
     service_id,
     time_slot_id,
     date,
-    status
+    status,
+    notes
 ) VALUES (
-    $1, $2, $3, $4, $5,'pending'
+    $1, $2, $3, $4, $5,'pending',$6
 ) RETURNING *;
 
 -- name: UpdateNotification :exec
